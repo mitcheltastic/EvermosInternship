@@ -1,76 +1,210 @@
 # Evermos Internship Project
 
-This project is a **Golang-based e-commerce API** using **MySQL**, built with **clean architecture**. It includes JWT authentication, pagination, filtering, and user access restrictions.
+## Overview
+
+This project is an e-commerce API built using Golang and MySQL, following the Clean Architecture pattern. It includes JWT authentication, role-based access control, pagination, and filtering.
+
+## Technologies Used
+
+- **Golang** (Gin framework)
+- **MySQL** (GORM ORM)
+- **JWT Authentication**
+- **Postman** for API testing
 
 ## Features
-- User authentication with JWT
-- Product and category management
-- Transaction processing
-- Role-based access control
-- Pagination and filtering
 
-## Tech Stack
-- **Golang**
-- **MySQL**
-- **GORM**
-- **Gin (for API routing)**
+- **User Management** (Register, Login, Role-based access control)
+- **Store Management** (CRUD operations, auto-created on user registration)
+- **Address Management** (User can manage multiple addresses)
+- **Category Management** (Admin-only feature)
+- **Product Management** (CRUD operations, image upload)
+- **Transaction System** (Purchase handling with product logs)
+- **Pagination & Filtering** (Implemented in multiple endpoints)
 
-## Installation
+## API Documentation
 
-### Prerequisites
-- Go installed (`>=1.18`)
-- MySQL installed and running
+### **Authentication**
 
-### Setup Steps
-1. Clone the repository:
-   ```sh
-   git clone https://github.com/your-repo/EvermosInternship.git
-   cd EvermosInternship
-   ```
-2. Create a `.env` file and configure your database:
-   ```sh
-   DB_USER=root
-   DB_PASSWORD=yourpassword
-   DB_HOST=localhost
-   DB_PORT=3306
-   DB_NAME=go_ecommerce
-   JWT_SECRET=your_secret_key
-   ```
-3. Install dependencies:
-   ```sh
-   go mod tidy
-   ```
-4. Run database migrations:
-   ```sh
-   go run main.go migrate
-   ```
-5. Start the server:
-   ```sh
-   go run main.go
-   ```
+#### 1. Register User
 
-## API Endpoints
+`POST /register`
 
-### Authentication
-- **POST /register** – Register a new user
-- **POST /login** – Login and get JWT token
+```json
+{
+  "name": "John Doe",
+  "email": "johndoe@example.com",
+  "password": "password123"
+}
+```
 
-### Products
-- **GET /products** – Get list of products
-- **POST /products** – Create a new product (Admin only)
+**Response:**
 
-### Transactions
-- **POST /transactions** – Create a new transaction
-- **GET /transactions** – Get user transactions
-- **GET /transactions/:id** – Get transaction details
+```json
+{
+  "message": "User registered successfully",
+  "user_id": 1
+}
+```
 
-## Testing with Postman
-- Import the provided `postman_collection.json`
-- Set the **Authorization Bearer Token** before making API calls
+#### 2. Login User
 
-## Contributors
-- **Your Name** – Backend Developer
+`POST /login`
 
-## License
-This project is licensed under the **MIT License**.
+```json
+{
+  "email": "johndoe@example.com",
+  "password": "password123"
+}
+```
+
+**Response:**
+
+```json
+{
+  "token": "your_jwt_token"
+}
+```
+
+### **Product APIs**
+
+#### 3. Create Product (Authenticated & Authorized: Admin)
+
+`POST /products`
+
+```json
+{
+  "name": "Laptop XYZ",
+  "price": 1200.50,
+  "category_id": 1,
+  "stock": 10,
+  "description": "High-end gaming laptop"
+}
+```
+
+**Response:**
+
+```json
+{
+  "message": "Product created successfully",
+  "product_id": 1
+}
+```
+
+#### 4. Get All Products (With Pagination & Filtering)
+
+`GET /products?page=1&limit=10&category=Electronics`
+**Response:**
+
+```json
+{
+  "products": [
+    {
+      "id": 1,
+      "name": "Laptop XYZ",
+      "price": 1200.50,
+      "category": "Electronics"
+    }
+  ],
+  "total_pages": 5
+}
+```
+
+### **Transaction APIs**
+
+#### 5. Create Transaction (Authenticated User)
+
+`POST /transactions`
+
+```json
+{
+  "shipping_address": "123 Main St, City",
+  "total_price": 150.75,
+  "invoice_code": "INV123456",
+  "payment_method": "Credit Card",
+  "status": "Pending",
+  "total_amount": 3
+}
+```
+
+**Response:**
+
+```json
+{
+  "message": "Transaction created successfully",
+  "transaction_id": 1
+}
+```
+
+#### 6. Get All Transactions (Admin Only)
+
+`GET /transactions`
+**Response:**
+
+```json
+{
+  "transactions": [
+    {
+      "id": 1,
+      "user_id": 6,
+      "total_price": 150.75,
+      "status": "Pending"
+    }
+  ]
+}
+```
+
+#### 7. Get User Transactions (Authenticated User)
+
+`GET /transactions/my`
+**Response:**
+
+```json
+{
+  "transactions": [
+    {
+      "id": 1,
+      "total_price": 150.75,
+      "status": "Pending"
+    }
+  ]
+}
+```
+
+### **Pagination & Filtering**
+
+Most `GET` endpoints support pagination:
+
+- `?page=1&limit=10` → Fetch 10 results per page
+- `?status=pending` → Filter transactions by status
+
+## Setup Instructions
+
+1. Clone the repository
+
+```sh
+git clone https://github.com/yourusername/yourrepo.git
+cd yourrepo
+```
+
+2. Install dependencies
+
+```sh
+go mod tidy
+```
+
+3. Configure `.env` file with your database credentials
+4. Run the server
+
+```sh
+go run main.go
+```
+
+## Conclusion
+
+This project demonstrates a full-fledged e-commerce API with authentication, role-based access, and a transaction system. Future improvements may include better logging, an admin dashboard, and additional security features.
+
+---
+
+**Author:** Mitchel M. Affandi\
+**Internship at:** Evermos
 
