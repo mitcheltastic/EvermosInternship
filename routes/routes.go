@@ -13,6 +13,11 @@ func SetupRouter() *gin.Engine {
 	r.POST("/register", controllers.Register)
 	r.POST("/login", controllers.Login)
 	r.POST("/logout", controllers.Logout)
+	// Public Routes (No authentication needed)
+	r.GET("/addresses/provinces", controllers.GetProvinces) // ✅ Get Provinces
+	r.GET("/addresses/cities/:province_id", controllers.GetCitiesByProvince) // ✅ Get Cities
+	// Public Routes
+	r.GET("/categories", controllers.GetCategories) // ✅ Get Categories (Public)
 
 	// Protected Routes (Require Authentication)
 	auth := r.Group("/")
@@ -29,8 +34,16 @@ func SetupRouter() *gin.Engine {
 		auth.GET("/stores/:id", controllers.GetStoreByID) // ✅ Get Store by ID
 		auth.PUT("/stores/:id", controllers.UpdateStore) // ✅ Update Store
 
-		// Category routes
-		auth.GET("/categories", controllers.GetCategories)
+		// Address routes
+		auth.GET("/addresses", controllers.GetUserAddresses) // ✅ Get All Addresses
+		auth.POST("/addresses", controllers.AddAddress) // ✅ Add Address
+		auth.PUT("/addresses/:id", controllers.UpdateAddress) // ✅ Update Address
+		auth.DELETE("/addresses/:id", controllers.DeleteAddress) // ✅ Delete Address
+
+		// Admin-Only Routes
+		auth.POST("/categories", controllers.CreateCategory) // ✅ Create Category (Admin)
+		auth.PUT("/categories/:id", controllers.UpdateCategory) // ✅ Update Category (Admin)
+		auth.DELETE("/categories/:id", controllers.DeleteCategory) // ✅ Delete Category (Admin)
 
 		// Product routes
 		auth.GET("/products", controllers.GetProducts)
