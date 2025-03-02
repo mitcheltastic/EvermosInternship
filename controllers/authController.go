@@ -10,6 +10,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+// Register handles user registration
 func Register(c *gin.Context) {
 	var input models.User
 	if err := c.ShouldBindJSON(&input); err != nil {
@@ -38,18 +39,18 @@ func Register(c *gin.Context) {
 		input.Gender = "Other" // Default to "Other" if invalid
 	}
 
-	// Handle empty birth_date
-	if input.BirthDate == "" {
-		input.BirthDate = "0001-01-01"
+	// Handle empty or invalid birth_date
+	if input.BirthDate.IsZero() { 
+		input.BirthDate = time.Date(0001, 1, 1, 0, 0, 0, 0, time.UTC) // Default to "0001-01-01"
 	} else {
-		_, err := time.Parse("2006-01-02", input.BirthDate)
+		_, err := time.Parse("2006-01-02", input.BirthDate.Format("2006-01-02"))
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid birth_date format. Use YYYY-MM-DD"})
 			return
 		}
 	}
 
-	// Create user
+	// Create user in database
 	if err := config.DB.Create(&input).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create user", "details": err.Error()})
 		return
@@ -69,7 +70,7 @@ func Register(c *gin.Context) {
 // Login handles user authentication
 func Login(c *gin.Context) {
 	var input struct {
-		Email    string `json:"email" binding:"required"`
+		Email    string `json:"email" binding:"required,email"`
 		Password string `json:"password" binding:"required"`
 	}
 
@@ -81,13 +82,13 @@ func Login(c *gin.Context) {
 	// Find user by email
 	var user models.User
 	if err := config.DB.Where("email = ?", input.Email).First(&user).Error; err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid email or password"})
 		return
 	}
 
 	// Compare hashed password
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(input.Password)); err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid password"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid email or password"})
 		return
 	}
 
@@ -100,4 +101,9 @@ func Login(c *gin.Context) {
 
 	// Success response
 	c.JSON(http.StatusOK, gin.H{"token": token})
+}
+
+// Logout endpoint
+func Logout(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{"message": "Successfully logged out. Please remove the token from your client storage."})
 }
