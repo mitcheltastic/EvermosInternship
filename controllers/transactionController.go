@@ -7,12 +7,11 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/mitcheltastic/EvermosInternship/config"
 	"github.com/mitcheltastic/EvermosInternship/models"
-	"github.com/mitcheltastic/EvermosInternship/middleware"
 )
 
 // GetTransactions retrieves all transactions for the authenticated user
 func GetTransactions(c *gin.Context) {
-	userID, exists := middleware.ExtractUserID(c)
+	userID, exists := c.Get("userID")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
@@ -20,12 +19,12 @@ func GetTransactions(c *gin.Context) {
 
 	var transactions []models.Transaction
 	config.DB.Where("user_id = ?", userID).Find(&transactions)
-	c.JSON(http.StatusOK, transactions)
+	c.JSON(http.StatusOK, gin.H{"transactions": transactions})
 }
 
-// GetTransaction retrieves a single transaction by ID
+// GetTransaction retrieves a specific transaction by ID
 func GetTransaction(c *gin.Context) {
-	userID, exists := middleware.ExtractUserID(c)
+	userID, exists := c.Get("userID")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
@@ -48,7 +47,7 @@ func GetTransaction(c *gin.Context) {
 
 // CreateTransaction handles transaction creation
 func CreateTransaction(c *gin.Context) {
-	userID, exists := middleware.ExtractUserID(c)
+	userID, exists := c.Get("userID")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
@@ -60,18 +59,18 @@ func CreateTransaction(c *gin.Context) {
 		return
 	}
 
-	transaction.UserID = userID
+	transaction.UserID = userID.(uint) // Ensure userID is correctly cast to uint
 	if err := config.DB.Create(&transaction).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create transaction"})
 		return
 	}
 
-	c.JSON(http.StatusCreated, transaction)
+	c.JSON(http.StatusCreated, gin.H{"message": "Transaction created successfully", "transaction_id": transaction.ID})
 }
 
 // UpdateTransaction modifies an existing transaction
 func UpdateTransaction(c *gin.Context) {
-	userID, exists := middleware.ExtractUserID(c)
+	userID, exists := c.Get("userID")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
@@ -99,12 +98,12 @@ func UpdateTransaction(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, transaction)
+	c.JSON(http.StatusOK, gin.H{"message": "Transaction updated successfully"})
 }
 
 // DeleteTransaction removes a transaction
 func DeleteTransaction(c *gin.Context) {
-	userID, exists := middleware.ExtractUserID(c)
+	userID, exists := c.Get("userID")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
@@ -127,5 +126,5 @@ func DeleteTransaction(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusNoContent, nil)
+	c.JSON(http.StatusOK, gin.H{"message": "Transaction deleted successfully"})
 }
