@@ -16,7 +16,7 @@ func SetupRouter() *gin.Engine {
 
 	// Protected Routes (Require Authentication)
 	auth := r.Group("/")
-	auth.Use(middleware.AuthMiddleware())
+	auth.Use(middleware.JWTAuthMiddleware())
 	{
 		// User routes
 		auth.GET("/users/profile", controllers.GetUserProfile)       // Get user profile

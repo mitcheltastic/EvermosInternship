@@ -1,8 +1,8 @@
 package controllers
 
 import (
+	"fmt" // ✅ Added fmt for debugging
 	"net/http"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/mitcheltastic/EvermosInternship/config"
@@ -18,41 +18,39 @@ func Register(c *gin.Context) {
 		return
 	}
 
-	// Check if email exists
-	var existingUser models.User
-	if err := config.DB.Where("email = ?", input.Email).First(&existingUser).Error; err == nil {
-		c.JSON(http.StatusConflict, gin.H{"error": "Email already exists"})
+	// 🔥 Debug: Print received data
+	fmt.Println("Received JSON Data:", input)
+
+	// 🔥 Ensure password is not empty
+	if input.Password == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Password is required"})
 		return
 	}
 
-	// Hash password
+	// 🔥 Hash password before storing
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(input.Password), bcrypt.DefaultCost)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to hash password"})
 		return
 	}
+	fmt.Println("🔹 Storing Hashed Password:", string(hashedPassword)) // Debugging
+
 	input.Password = string(hashedPassword)
 
-	// Validate gender (MySQL ENUM is case-sensitive)
-	validGenders := map[string]bool{"Male": true, "Female": true, "Other": true}
-	if _, exists := validGenders[input.Gender]; !exists {
-		input.Gender = "Other" // Default to "Other" if invalid
-	}
-
-	// Handle empty or invalid birth_date
-	if input.BirthDate.IsZero() { 
-		input.BirthDate = time.Date(0001, 1, 1, 0, 0, 0, 0, time.UTC) // Default to "0001-01-01"
-	} else {
-		_, err := time.Parse("2006-01-02", input.BirthDate.Format("2006-01-02"))
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid birth_date format. Use YYYY-MM-DD"})
-			return
-		}
-	}
-
-	// Create user in database
+	// 🔥 Store user in the database
 	if err := config.DB.Create(&input).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create user", "details": err.Error()})
+		return
+	}
+
+	// 🚀 Auto-create store
+	store := models.Store{
+		UserID:   input.ID,
+		Name:     input.Name + "'s Store",
+		ImageURL: "default-store-image.png",
+	}
+	if err := config.DB.Create(&store).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "User registered, but failed to create store", "details": err.Error()})
 		return
 	}
 
@@ -63,8 +61,8 @@ func Register(c *gin.Context) {
 		return
 	}
 
-	// Success response
-	c.JSON(http.StatusOK, gin.H{"token": token})
+	// ✅ Success response
+	c.JSON(http.StatusOK, gin.H{"token": token, "store_id": store.ID})
 }
 
 // Login handles user authentication
@@ -79,9 +77,9 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	// Find user by email
+	// Find user by email (make sure email comparison is case-insensitive)
 	var user models.User
-	if err := config.DB.Where("email = ?", input.Email).First(&user).Error; err != nil {
+	if err := config.DB.Where("LOWER(email) = LOWER(?)", input.Email).First(&user).Error; err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid email or password"})
 		return
 	}
@@ -103,7 +101,10 @@ func Login(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"token": token})
 }
 
+
 // Logout endpoint
 func Logout(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Successfully logged out. Please remove the token from your client storage."})
 }
+
+

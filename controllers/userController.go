@@ -1,11 +1,10 @@
 package controllers
 
 import (
+	"net/http"
 	"github.com/gin-gonic/gin"
-	"github.com/mitcheltastic/EvermosInternship/models"
 	"github.com/mitcheltastic/EvermosInternship/repositories"
 	"golang.org/x/crypto/bcrypt"
-	"net/http"
 )
 
 // GetUserProfile - Get user profile
@@ -33,7 +32,15 @@ func UpdateUserProfile(c *gin.Context) {
 		return
 	}
 
-	var input models.User
+	var input struct {
+		Name      string `json:"name"`
+		Phone     string `json:"phone"`
+		BirthDate string `json:"birth_date"`
+		Gender    string `json:"gender"`
+		Bio       string `json:"bio"`
+		Job       string `json:"job"`
+	}
+
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -45,13 +52,25 @@ func UpdateUserProfile(c *gin.Context) {
 		return
 	}
 
-	// Update fields
-	user.Name = input.Name
-	user.Phone = input.Phone
-	user.BirthDate = input.BirthDate
-	user.Gender = input.Gender
-	user.Bio = input.Bio
-	user.Job = input.Job
+	// Only update fields if they are provided
+	if input.Name != "" {
+		user.Name = input.Name
+	}
+	if input.Phone != "" {
+		user.Phone = input.Phone
+	}
+	if input.BirthDate != "" {
+		user.BirthDate.UnmarshalJSON([]byte(`"` + input.BirthDate + `"`))
+	}
+	if input.Gender != "" {
+		user.Gender = input.Gender
+	}
+	if input.Bio != "" {
+		user.Bio = input.Bio
+	}
+	if input.Job != "" {
+		user.Job = input.Job
+	}
 
 	if err := repositories.UpdateUser(user); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update user"})
@@ -70,8 +89,8 @@ func ChangePassword(c *gin.Context) {
 	}
 
 	var input struct {
-		OldPassword string `json:"old_password"`
-		NewPassword string `json:"new_password"`
+		OldPassword string `json:"old_password" binding:"required"`
+		NewPassword string `json:"new_password" binding:"required"`
 	}
 
 	if err := c.ShouldBindJSON(&input); err != nil {
@@ -92,7 +111,11 @@ func ChangePassword(c *gin.Context) {
 	}
 
 	// Hash new password
-	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(input.NewPassword), bcrypt.DefaultCost)
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(input.NewPassword), bcrypt.DefaultCost)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to hash password"})
+		return
+	}
 	user.Password = string(hashedPassword)
 
 	if err := repositories.UpdateUser(user); err != nil {
