@@ -13,48 +13,51 @@ func SetupRouter() *gin.Engine {
 	r.POST("/register", controllers.Register)
 	r.POST("/login", controllers.Login)
 	r.POST("/logout", controllers.Logout)
+
 	// Public Routes (No authentication needed)
-	r.GET("/addresses/provinces", controllers.GetProvinces) // ✅ Get Provinces
-	r.GET("/addresses/cities/:province_id", controllers.GetCitiesByProvince) // ✅ Get Cities
-	// Public Routes
-	r.GET("/categories", controllers.GetCategories) // ✅ Get Categories (Public)
-	// Public Routes
-	r.GET("/products", controllers.GetProducts) // ✅ Get Products (Public)
-	r.GET("/products/:id", controllers.GetProductByID) // ✅ Get Single Product (Public)
+	r.GET("/addresses/provinces", controllers.GetProvinces) 
+	r.GET("/addresses/cities/:province_id", controllers.GetCitiesByProvince) 
+	r.GET("/categories", controllers.GetCategories) 
+	r.GET("/products", controllers.GetProducts) 
+	r.GET("/products/:id", controllers.GetProductByID) 
 
 	// Protected Routes (Require Authentication)
 	auth := r.Group("/")
 	auth.Use(middleware.JWTAuthMiddleware())
 	{
 		// User routes
-		auth.GET("/users/profile", controllers.GetUserProfile)       // Get user profile
-		auth.PUT("/users/profile", controllers.UpdateUserProfile)    // Update profile
-		auth.PUT("/users/change-password", controllers.ChangePassword) // Change password
-		auth.DELETE("/users/delete", controllers.DeleteAccount)      // Delete account
+		auth.GET("/users/profile", controllers.GetUserProfile)       
+		auth.PUT("/users/profile", controllers.UpdateUserProfile)    
+		auth.PUT("/users/change-password", controllers.ChangePassword) 
+		auth.DELETE("/users/delete", controllers.DeleteAccount)      
 
 		// Store routes
-		auth.GET("/stores", controllers.GetStores) // ✅ Get All Stores
-		auth.GET("/stores/:id", controllers.GetStoreByID) // ✅ Get Store by ID
-		auth.PUT("/stores/:id", controllers.UpdateStore) // ✅ Update Store
+		auth.GET("/stores", controllers.GetStores) 
+		auth.GET("/stores/:id", controllers.GetStoreByID) 
+		auth.PUT("/stores/:id", controllers.UpdateStore) 
 
 		// Address routes
-		auth.GET("/addresses", controllers.GetUserAddresses) // ✅ Get All Addresses
-		auth.POST("/addresses", controllers.AddAddress) // ✅ Add Address
-		auth.PUT("/addresses/:id", controllers.UpdateAddress) // ✅ Update Address
-		auth.DELETE("/addresses/:id", controllers.DeleteAddress) // ✅ Delete Address
+		auth.GET("/addresses", controllers.GetUserAddresses) 
+		auth.POST("/addresses", controllers.AddAddress) 
+		auth.PUT("/addresses/:id", controllers.UpdateAddress) 
+		auth.DELETE("/addresses/:id", controllers.DeleteAddress) 
 
 		// Admin-Only Routes
-		auth.POST("/categories", controllers.CreateCategory) // ✅ Create Category (Admin)
-		auth.PUT("/categories/:id", controllers.UpdateCategory) // ✅ Update Category (Admin)
-		auth.DELETE("/categories/:id", controllers.DeleteCategory) // ✅ Delete Category (Admin)
+		auth.POST("/categories", controllers.CreateCategory) 
+		auth.PUT("/categories/:id", controllers.UpdateCategory) 
+		auth.DELETE("/categories/:id", controllers.DeleteCategory) 
 
 		// Store Owner Routes
-		auth.POST("/products", controllers.CreateProduct) // ✅ Create Product (Store Owner)
-		auth.PUT("/products/:id", controllers.UpdateProduct) // ✅ Update Product (Store Owner)
-		auth.DELETE("/products/:id", controllers.DeleteProduct) // ✅ Delete Product (Store Owner)
+		auth.POST("/products", controllers.CreateProduct) 
+		auth.PUT("/products/:id", controllers.UpdateProduct) 
+		auth.DELETE("/products/:id", controllers.DeleteProduct) 
 
-		// Transaction routes
-		auth.GET("/transactions", controllers.GetTransactions)
+		// Transaction routes (Added Here)
+		auth.GET("/transactions", controllers.GetTransactions) // Get all transactions of the logged-in user
+		auth.GET("/transactions/:id", controllers.GetTransaction) // Get a specific transaction by ID
+		auth.POST("/transactions", controllers.CreateTransaction) // Create a new transaction
+		auth.PUT("/transactions/:id", controllers.UpdateTransaction) // Update an existing transaction
+		auth.DELETE("/transactions/:id", controllers.DeleteTransaction) // Delete a transaction
 	}
 
 	return r
