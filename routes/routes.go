@@ -25,7 +25,9 @@ func SetupRouter() *gin.Engine {
 		auth.DELETE("/users/delete", controllers.DeleteAccount)      // Delete account
 
 		// Store routes
-		auth.GET("/stores", controllers.GetStores)
+		auth.GET("/stores", controllers.GetStores) // ✅ Get All Stores
+		auth.GET("/stores/:id", controllers.GetStoreByID) // ✅ Get Store by ID
+		auth.PUT("/stores/:id", controllers.UpdateStore) // ✅ Update Store
 
 		// Category routes
 		auth.GET("/categories", controllers.GetCategories)
